@@ -20,7 +20,7 @@ model news {
 }
 
 model refresh_tokens {
-  id_refresh    String   @id @db.Uuid
+  id_refresh    String   @id @default(uuid()) @db.Uuid
   user_id       String   @db.Uuid
   refresh_token String   @unique(map: "refresh_tokens_refresh_token_idx") @db.VarChar(1024)
   expires_at    DateTime @db.Timestamp(6)
@@ -32,7 +32,7 @@ model refresh_tokens {
 }
 
 model roles {
-  id_role    String   @id @db.Uuid
+  id_role    String   @id @default(uuid()) @db.Uuid
   role_name  String   @db.VarChar(20)
   created_at DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
   updated_at DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
@@ -40,7 +40,7 @@ model roles {
 }
 
 model users {
-  id_user          String           @id @db.Uuid
+  id_user          String           @id @default(uuid()) @db.Uuid
   first_name       String           @db.VarChar(50)
   last_name        String           @db.VarChar(50)
   email            String           @unique @db.VarChar(255)
