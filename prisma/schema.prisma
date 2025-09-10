@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -12,4 +6,62 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model news {
+  id_news     Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  description String
+  image_url   String?   @db.VarChar(255)
+  start_date  DateTime? @db.Timestamp(6)
+  end_date    DateTime? @db.Timestamp(6)
+  created_at  DateTime  @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  updated_at  DateTime  @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+}
+
+model refresh_tokens {
+  id_refresh    String   @id @db.Uuid
+  user_id       String   @db.Uuid
+  refresh_token String   @unique(map: "refresh_tokens_refresh_token_idx") @db.VarChar(1024)
+  expires_at    DateTime @db.Timestamp(6)
+  created_at    DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  updated_at    DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  users         users    @relation(fields: [user_id], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([user_id])
+}
+
+model roles {
+  id_role    String   @id @db.Uuid
+  role_name  String   @db.VarChar(20)
+  created_at DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  updated_at DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  users      users[]
+}
+
+model users {
+  id_user          String           @id @db.Uuid
+  first_name       String           @db.VarChar(50)
+  last_name        String           @db.VarChar(50)
+  email            String           @unique @db.VarChar(255)
+  hashed_password  String           @db.Char(128)
+  is_verified      Int              @default(0) @db.SmallInt
+  is_active        Int              @default(0) @db.SmallInt
+  activation_token String?          @db.VarChar(512)
+  role_id          String           @db.Uuid
+  created_at       DateTime         @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  updated_at       DateTime         @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  refresh_tokens   refresh_tokens[]
+  roles            roles            @relation(fields: [role_id], references: [id_role], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model volunteers {
+  id_volunteer Int       @id @default(autoincrement())
+  first_name   String    @db.VarChar(50)
+  last_name    String    @db.VarChar(50)
+  is_absent    Int       @default(0) @db.SmallInt
+  start_date   DateTime? @db.Timestamp(6)
+  end_date     DateTime? @db.Timestamp(6)
+  created_at   DateTime  @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  updated_at   DateTime  @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
 }
