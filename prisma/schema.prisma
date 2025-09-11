@@ -11,12 +11,12 @@ datasource db {
 model news {
   id_news     Int       @id @default(autoincrement())
   title       String    @db.VarChar(255)
-  description String
-  image_url   String?   @db.VarChar(255)
+  description String    @db.Text
+  image_url   String?   @db.Text
   start_date  DateTime? @db.Timestamp(6)
   end_date    DateTime? @db.Timestamp(6)
-  created_at  DateTime  @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
-  updated_at  DateTime  @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime  @updatedAt @db.Timestamp(6)
 }
 
 model refresh_tokens {
@@ -24,8 +24,8 @@ model refresh_tokens {
   user_id       String   @db.Uuid
   refresh_token String   @unique(map: "refresh_tokens_refresh_token_idx") @db.VarChar(1024)
   expires_at    DateTime @db.Timestamp(6)
-  created_at    DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
-  updated_at    DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  created_at    DateTime @default(now()) @db.Timestamp(6)
+  updated_at    DateTime@updatedAt @db.Timestamp(6)
   users         users    @relation(fields: [user_id], references: [id_user], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([user_id])
@@ -34,8 +34,8 @@ model refresh_tokens {
 model roles {
   id_role    String   @id @default(uuid()) @db.Uuid
   role_name  String   @db.VarChar(20)
-  created_at DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
-  updated_at DateTime @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
   users      users[]
 }
 
@@ -45,12 +45,13 @@ model users {
   last_name        String           @db.VarChar(50)
   email            String           @unique @db.VarChar(255)
   hashed_password  String           @db.Char(128)
-  is_verified      Int              @default(0) @db.SmallInt
-  is_active        Int              @default(0) @db.SmallInt
+  is_verified       Boolean           @default(false)
+  is_active        Boolean          @default(false)
   activation_token String?          @db.VarChar(512)
+  gdpr_accepted_at DateTime?        @db.Timestamp(6)
   role_id          String           @db.Uuid
-  created_at       DateTime         @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
-  updated_at       DateTime         @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  created_at       DateTime         @default(now()) @db.Timestamp(6)
+  updated_at       DateTime         @updatedAt @db.Timestamp(6)
   refresh_tokens   refresh_tokens[]
   roles            roles            @relation(fields: [role_id], references: [id_role], onDelete: NoAction, onUpdate: NoAction)
 }
@@ -62,6 +63,6 @@ model volunteers {
   is_absent    Int       @default(0) @db.SmallInt
   start_date   DateTime? @db.Timestamp(6)
   end_date     DateTime? @db.Timestamp(6)
-  created_at   DateTime  @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
-  updated_at   DateTime  @default(dbgenerated("'2025-09-10 13:38:34.027214'::timestamp without time zone")) @db.Timestamp(6)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @updatedAt @db.Timestamp(6)
 }

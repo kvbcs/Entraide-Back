@@ -9,7 +9,7 @@ import { NewsModule } from './news/news.module';
       isGlobal: true,
     }),
     PrismaModule,
-    NewsModule,
+    NewsModule
   ],
 })
 export class AppModule {}
