@@ -7,12 +7,15 @@ import {
   Patch,
   Post,
   UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
 import { InsertNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto';
 import { ImageUploadInterceptor } from '../utils/file.upload.util';
+import { AdminGuard, JwtGuard } from 'src/auth/guards';
 
+@UseGuards(JwtGuard, AdminGuard)
 @Controller('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
