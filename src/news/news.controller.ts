@@ -4,16 +4,13 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
-  Put,
   UploadedFile,
-  UseInterceptors,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
-import { InsertNewsDto } from './dto/insert.news.dto';
+import { InsertNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { ImageUploadInterceptor } from '../utils/file.upload.util';
 
 @Controller('news')
@@ -46,11 +43,11 @@ export class NewsController {
     });
   }
 
-  @Put(':id')
+  @Patch(':id')
   @ImageUploadInterceptor()
   async updateNews(
-    @Param('id') id: number, 
-    @Body() dto: UpdateNewsDto, 
+    @Param('id') id: number,
+    @Body() dto: UpdateNewsDto,
     @UploadedFile() file?: Express.Multer.File, // Nouveau fichier uploadé (optionnel)
   ) {
     // Si un nouveau fichier est envoyé -> remplace l'image
