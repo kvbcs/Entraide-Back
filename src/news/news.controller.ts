@@ -15,7 +15,6 @@ import { UpdateNewsDto } from './dto';
 import { ImageUploadInterceptor } from '../utils/file.upload.util';
 import { AdminGuard, JwtGuard } from 'src/auth/guards';
 
-@UseGuards(JwtGuard, AdminGuard)
 @Controller('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
@@ -30,6 +29,7 @@ export class NewsController {
     return this.newsService.getNewsById(id);
   }
 
+  @UseGuards(JwtGuard, AdminGuard)
   @Post()
   @ImageUploadInterceptor()
   async createNews(
@@ -46,6 +46,7 @@ export class NewsController {
     });
   }
 
+  @UseGuards(JwtGuard, AdminGuard)
   @Patch(':id')
   @ImageUploadInterceptor()
   async updateNews(
@@ -63,6 +64,7 @@ export class NewsController {
     });
   }
 
+  @UseGuards(JwtGuard, AdminGuard)
   @Delete('/:id')
   DeleteNews(@Param('id') id: number) {
     return this.newsService.deleteNews(id);

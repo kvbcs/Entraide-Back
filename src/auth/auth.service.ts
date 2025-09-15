@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LoginDto } from './dto';
@@ -42,33 +47,49 @@ export class AuthService {
 
     const hashed_password = await argon.hash(dto.password);
 
+    const userRole = await this.prisma.roles.findUnique({
+      where: {
+        role_name: 'user',
+      },
+    });
+
+    if (!userRole) {
+      throw new NotFoundException("Role 'user' not found");
+    }
+
     return this.prisma.users.create({
       data: {
-        ...dto,
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        email: dto.email,
         hashed_password: hashed_password,
-        role_id: 'user',
+        role_id: userRole.id_role,
+        gdpr_accepted_at: new Date(),
       },
     });
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.users.findUnique({
+    const existingUser = await this.prisma.users.findUnique({
       where: {
         email: dto.email,
       },
+      include: {
+        roles: true,
+      },
     });
-    if (!user) {
-      throw new ForbiddenException('Invalid crendentials');
+    if (!existingUser) {
+      throw new UnauthorizedException('Invalid crendentials');
     }
 
     const isValidPassword = await argon.verify(
-      user.hashed_password,
+      existingUser.hashed_password,
       dto.password,
     );
     if (!isValidPassword) {
-      throw new ForbiddenException('Invalid crendentials');
+      throw new UnauthorizedException('Invalid crendentials');
     }
     //Return access_token from the signToken function with id_user as param
-    return this.signToken(user.id_user);
+    return this.signToken(existingUser.id_user);
   }
 }

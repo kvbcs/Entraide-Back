@@ -19,7 +19,7 @@ export class AdminGuard implements CanActivate {
     const user = request.user;
 
     // Si le nom du rôle est n'est pas admin alors erreur 403
-    if (user && user.role && user.role.name === 'admin') {
+    if (user && user.roles && user.roles.role_name === 'admin') {
       return true;
     } else {
       throw new ForbiddenException('Admin role required');
