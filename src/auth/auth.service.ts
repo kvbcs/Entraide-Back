@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -10,6 +11,7 @@ import { LoginDto } from './dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon from 'argon2';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +19,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwt: JwtService,
     private config: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   async signToken(userId: string): Promise<{ access_token: string }> {
@@ -55,11 +58,13 @@ export class AuthService {
 
     if (!userRole) {
       throw new NotFoundException(
-        "Role 'user' non trouvé ! Veuillez contacter l'administrateur.",
+        "Role inexistant ! Veuillez contacter l'administrateur immédiatement.",
       );
     }
 
-    await this.prisma.users.create({
+    const activationToken = await argon.hash(`${new Date()} + ${dto.email}`);
+
+    const user = await this.prisma.users.create({
       data: {
         first_name: dto.first_name,
         last_name: dto.last_name,
@@ -68,8 +73,15 @@ export class AuthService {
         role_id: userRole.id_role,
         is_active: true,
         gdpr_accepted_at: new Date(),
+        activation_token: activationToken,
       },
     });
+
+    try {
+      await this.emailService.sendUserConfirmation(user, activationToken);
+    } catch (error) {
+      return new BadRequestException(error, 'Erreur email');
+    }
 
     return {
       status: 'Succès',
@@ -97,6 +109,7 @@ export class AuthService {
       );
     }
 
+    //Password match verification
     const isValidPassword = await argon.verify(
       existingUser.hashed_password,
       dto.password,
@@ -104,8 +117,19 @@ export class AuthService {
     if (!isValidPassword) {
       throw new UnauthorizedException('Identifiants invalides !');
     }
-    //Return access_token from the signToken function with id_user as param
+
+    //Create access_token from the signToken function with id_user as sub
     const token = await this.signToken(existingUser.id_user);
+
+    //Delete activation token from DB
+    await this.prisma.users.update({
+      where: {
+        id_user: existingUser.id_user,
+      },
+      data: {
+        activation_token: null,
+      },
+    });
 
     return {
       status: 'Succès',
