@@ -26,7 +26,7 @@ export class AuthService {
 
     const secret = this.config.get('JWT_SECRET');
     const token = await this.jwt.signAsync(payload, {
-      expiresIn: '30d',
+      expiresIn: '1d',
       secret: secret,
     });
 
@@ -42,7 +42,7 @@ export class AuthService {
       },
     });
     if (exisingUser) {
-      throw new ForbiddenException('Email already taken !');
+      throw new ForbiddenException('Email déjà pris !');
     }
 
     const hashed_password = await argon.hash(dto.password);
@@ -54,19 +54,28 @@ export class AuthService {
     });
 
     if (!userRole) {
-      throw new NotFoundException("Role 'user' not found");
+      throw new NotFoundException(
+        "Role 'user' non trouvé ! Veuillez contacter l'administrateur.",
+      );
     }
 
-    return this.prisma.users.create({
+    await this.prisma.users.create({
       data: {
         first_name: dto.first_name,
         last_name: dto.last_name,
         email: dto.email,
         hashed_password: hashed_password,
         role_id: userRole.id_role,
+        is_active: true,
         gdpr_accepted_at: new Date(),
       },
     });
+
+    return {
+      status: 'Succès',
+      message:
+        'Inscription réussite ! Veuillez activer votre compte via le mail envoyé.',
+    };
   }
 
   async login(dto: LoginDto) {
@@ -79,7 +88,13 @@ export class AuthService {
       },
     });
     if (!existingUser) {
-      throw new UnauthorizedException('Invalid crendentials');
+      throw new UnauthorizedException('Identifiants invalides !');
+    }
+
+    if (existingUser.is_verified === false) {
+      throw new UnauthorizedException(
+        'Veuillez activer votre compte via le mail de confirmation.',
+      );
     }
 
     const isValidPassword = await argon.verify(
@@ -87,9 +102,15 @@ export class AuthService {
       dto.password,
     );
     if (!isValidPassword) {
-      throw new UnauthorizedException('Invalid crendentials');
+      throw new UnauthorizedException('Identifiants invalides !');
     }
     //Return access_token from the signToken function with id_user as param
-    return this.signToken(existingUser.id_user);
+    const token = await this.signToken(existingUser.id_user);
+
+    return {
+      status: 'Succès',
+      message: 'Connexion réussite !',
+      data: token,
+    };
   }
 }

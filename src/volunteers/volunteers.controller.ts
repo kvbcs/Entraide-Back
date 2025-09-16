@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { VolunteersService } from './volunteers.service';
 import { CreateVolunteerDto } from './dto/create-volunteer.dto';
@@ -23,23 +24,21 @@ export class VolunteersController {
     return this.volunteersService.getAllVolunteers();
   }
 
-  @Get('/:id')
-  GetVolunteerByID(@Param('id') id: number) {
-    return this.volunteersService.getVolunteerById(id);
-  }
-
-  @Post()
+   @Post()
   CreateVolunteer(@Body() dto: CreateVolunteerDto) {
     return this.volunteersService.createVolunteer(dto);
   }
 
   @Patch('/:id')
-  UpdateVolunteer(@Param('id') id: number, @Body() dto: UpdateVolunteerDto) {
+  UpdateVolunteer(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateVolunteerDto,
+  ) {
     return this.volunteersService.updateVolunteer(id, dto);
   }
 
   @Delete('/:id')
-  DeleteVolunteers(@Param('id') id: number) {
+  DeleteVolunteers(@Param('id', ParseIntPipe) id: number) {
     return this.volunteersService.deleteVolunteers(id);
   }
 }

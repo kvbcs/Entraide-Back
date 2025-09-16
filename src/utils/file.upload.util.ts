@@ -1,6 +1,6 @@
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import {  UseInterceptors } from '@nestjs/common';
+import { UseInterceptors } from '@nestjs/common';
 
 // Fonction utilitaire qui retourne un interceptor prêt à l'emploi
 export function ImageUploadInterceptor(fieldName = 'image') {

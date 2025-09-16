@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   UploadedFile,
@@ -25,7 +26,7 @@ export class NewsController {
   }
 
   @Get('/:id')
-  GetNewsById(@Param('id') id: number) {
+  GetNewsById(@Param('id', ParseIntPipe) id: number) {
     return this.newsService.getNewsById(id);
   }
 
@@ -47,10 +48,10 @@ export class NewsController {
   }
 
   @UseGuards(JwtGuard, AdminGuard)
-  @Patch(':id')
+  @Patch('/:id')
   @ImageUploadInterceptor()
   async updateNews(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateNewsDto,
     @UploadedFile() file?: Express.Multer.File, // Nouveau fichier uploadé (optionnel)
   ) {
@@ -66,7 +67,7 @@ export class NewsController {
 
   @UseGuards(JwtGuard, AdminGuard)
   @Delete('/:id')
-  DeleteNews(@Param('id') id: number) {
+  DeleteNews(@Param('id', ParseIntPipe) id: number) {
     return this.newsService.deleteNews(id);
   }
 }
