@@ -12,14 +12,14 @@ export class EmailService {
       port: Number(this.config.get('SMTP_PORT')),
       secure: this.config.get('MAILER_SECURE') === 'true',
       auth: {
-        user: this.config.get('SMTP_EMAIL'),
-        pass: this.config.get('SMTP_PASSWORD'),
+        user: this.config.get('SMTP_PUBLIC_KEY'),
+        pass: this.config.get('SMTP_PRIVATE_KEY'),
       },
     });
   }
 
   async sendUserConfirmation(user: users, token: string) {
-    const url = `${this.config.get('SERVER_URL')}/activate?token=${token}`;
+    const url = `${this.config.get('SERVER_URL')}/auth/activate?token=${token}`;
     const emailHtml = `<p>Bonjour ${user.first_name} ${user.last_name},</p>
         <p>Merci d'avoir créé votre compte sur l'Association Aixoise d'Entraide !</p>
             <a href='${url}'>Cliquez sur ce lien pour activer votre compte.</a>

@@ -12,7 +12,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon from 'argon2';
 import { EmailService } from 'src/email/email.service';
-
+import { randomUUID } from 'crypto';
+import { roles, users } from 'generated/prisma';
+type UserWithRole = users & { roles: roles };
 @Injectable()
 export class AuthService {
   constructor(
@@ -22,9 +24,11 @@ export class AuthService {
     private emailService: EmailService,
   ) {}
 
-  async signToken(userId: string): Promise<{ access_token: string }> {
+  async signToken(user: UserWithRole): Promise<{ access_token: string }> {
     const payload = {
-      sub: userId,
+      sub: user.id_user,
+      role: user.roles.role_name,
+      name: `${user.first_name} ${user.last_name}`,
     };
 
     const secret = this.config.get('JWT_SECRET');
@@ -62,7 +66,7 @@ export class AuthService {
       );
     }
 
-    const activationToken = await argon.hash(`${new Date()} + ${dto.email}`);
+    const activationToken = randomUUID();
 
     const user = await this.prisma.users.create({
       data: {
@@ -80,7 +84,9 @@ export class AuthService {
     try {
       await this.emailService.sendUserConfirmation(user, activationToken);
     } catch (error) {
-      return new BadRequestException(error, 'Erreur email');
+      //Delete created user if email fails
+      await this.prisma.users.delete({ where: { id_user: user.id_user } });
+      throw new BadRequestException('Erreur email, inscription annulée', error);
     }
 
     return {
@@ -91,6 +97,7 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    
     const existingUser = await this.prisma.users.findUnique({
       where: {
         email: dto.email,
@@ -103,7 +110,7 @@ export class AuthService {
       throw new UnauthorizedException('Identifiants invalides !');
     }
 
-    if (existingUser.is_verified === false) {
+    if (!existingUser.is_verified) {
       throw new UnauthorizedException(
         'Veuillez activer votre compte via le mail de confirmation.',
       );
@@ -119,22 +126,59 @@ export class AuthService {
     }
 
     //Create access_token from the signToken function with id_user as sub
-    const token = await this.signToken(existingUser.id_user);
+    const token = await this.signToken(existingUser);
 
     //Delete activation token from DB
+    if (existingUser.activation_token) {
+      await this.prisma.users.update({
+        where: {
+          id_user: existingUser.id_user,
+        },
+        data: {
+          activation_token: null,
+        },
+      });
+    }
+
+    return {
+     
+      access_token: token.access_token,
+      userRole: existingUser.roles.role_name,
+      userName: `${existingUser.first_name} ${existingUser.last_name}`,
+    };
+  }
+
+  async activateUser(token: string) {
+    // On cherche l’utilisateur avec ce token
+    const user = await this.prisma.users.findFirst({
+      where: { activation_token: token },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Lien d’activation invalide ou expiré !');
+    }
+
+    if (user.is_verified) {
+      throw new BadRequestException('Compte déjà vérifié !');
+    }
+
+    if (user.activation_token !== token) {
+      throw new BadRequestException('Token invalide ou expiré !');
+    }
+
+    // Mise à jour : active et supprime le token
     await this.prisma.users.update({
-      where: {
-        id_user: existingUser.id_user,
-      },
+      where: { id_user: user.id_user },
       data: {
+        is_verified: true,
         activation_token: null,
       },
     });
 
     return {
       status: 'Succès',
-      message: 'Connexion réussite !',
-      data: token,
+      message:
+        'Votre compte a été activé avec succès, vous pouvez vous connecter.',
     };
   }
 }
