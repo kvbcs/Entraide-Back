@@ -16,17 +16,20 @@ import type { Response } from 'express';
 import { JwtGuard } from './guards/jwt.guard';
 import { GetUser } from './decorator/get-user.decorator';
 import type { users } from 'generated/prisma';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('/register')
+  @Throttle({ default: { limit: 3, ttl: 60 } })
   Register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('/login')
+  @Throttle({ default: { limit: 3, ttl: 60 } })
   @HttpCode(HttpStatus.OK)
   async Login(
     @Body() dto: LoginDto,
@@ -54,7 +57,7 @@ export class AuthController {
   getMe(@GetUser() user: users) {
     return user;
   }
-  
+
   @Post('/logout')
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('access_token');

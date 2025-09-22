@@ -6,6 +6,8 @@ import { VolunteersModule } from './volunteers/volunteers.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { EmailModule } from './email/email.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -17,7 +19,19 @@ import { EmailModule } from './email/email.module';
     VolunteersModule,
     UsersModule,
     AuthModule,
-    EmailModule
+    EmailModule,
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, //60 sec
+        limit: 10, //10 req par min
+      },
+    ]),
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

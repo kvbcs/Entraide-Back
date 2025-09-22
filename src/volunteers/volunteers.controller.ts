@@ -18,13 +18,13 @@ import { AdminGuard, JwtGuard } from 'src/auth/guards';
 @Controller('volunteers')
 export class VolunteersController {
   constructor(private readonly volunteersService: VolunteersService) {}
-
+  
   @Get()
   GetAllVolunteers() {
     return this.volunteersService.getAllVolunteers();
   }
 
-   @Post()
+  @Post()
   CreateVolunteer(@Body() dto: CreateVolunteerDto) {
     return this.volunteersService.createVolunteer(dto);
   }
