@@ -2,8 +2,9 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy } from 'passport-jwt';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Request } from 'express';
 
 // Déclaration de la classe JwtStrategy comme étant injectable, ce qui permet à NestJS de la gérer comme une dépendance.
 @Injectable()
@@ -20,7 +21,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     // - secretOrKey: Sers à entrer la clef secrète pour déchiffrage
     // on utilise config pour récupérer la variable d'environnement JWT_SECRET comme clef
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: (req: Request & { cookies?: any }) => {
+        if (!req.cookies || !req.cookies['access_token']) {
+          return null;
+        }
+        return req.cookies['access_token'];
+      },
       secretOrKey: config.get('JWT_SECRET'),
     });
   }
@@ -31,6 +37,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     const user = this.prisma.users.findUnique({
       where: {
         id_user: payload.sub,
+        is_active: true,
       },
       select: {
         id_user: true,
@@ -40,7 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       },
     });
     if (!user) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Token JWT invalide ou expiré !');
     }
 
     return user;
